@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from inference import predict_image
 import os
 import shutil
-import time  # Import time for unique filename generation
+import time
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -32,7 +32,7 @@ async def predict(file: UploadFile = File(...)):
         unique_filename = f"{timestamp}_{file.filename}"
         file_location = os.path.join(UPLOAD_DIR, unique_filename)
 
-        # Always overwrite the file to ensure the latest version is processed
+        # Save the uploaded file
         with open(file_location, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
@@ -42,7 +42,10 @@ async def predict(file: UploadFile = File(...)):
         # Optional: Remove the file after prediction to prevent clutter
         # os.remove(file_location)
 
-        return {"filename": unique_filename, "prediction": int(prediction[0])}
+        # Return the filename and prediction as a response
+        return {"filename": unique_filename, "prediction": int(prediction)}
 
+    except FileNotFoundError as fnf_error:
+        raise HTTPException(status_code=404, detail=f"File not found: {str(fnf_error)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
